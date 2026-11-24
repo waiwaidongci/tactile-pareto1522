@@ -1,0 +1,15 @@
+@import url('https://fonts.googleapis.com/css2?family=Rubik:wght@400;600;700&family=DM+Serif+Text&display=swap');
+:root {
+  --text-font: 'Rubik'; --title-font: 'DM Serif Text';
+  --paper: oklch(.975 .012 16); --surface: oklch(.994 .006 16);
+  --ink: oklch(.235 .035 16); --quiet: oklch(.435 .038 16);
+  --stripe: oklch(.961 .014 16); --rule: oklch(.858 .024 16);
+  --accent: oklch(.445 0.143 16); --button-ink: oklch(.98 .007 16);
+  --focus: oklch(.64 0.143 16);
+  --side: oklch(.923 .029 16);
+  --side-ink: oklch(.255 .033 16);
+  --highlight: oklch(.866 .045 16);
+  --highlight-edge: oklch(.49 .10 16);
+  --side-width: 286px; --side-pad: 1.65rem;
+  --login-ratio: 2.0300000000000002fr; --report-stripe: 7px;
+}

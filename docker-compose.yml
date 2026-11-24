@@ -1,0 +1,75 @@
+name: tactile-pareto-gb0080
+x-python: &python
+  build: ./backend
+  environment:
+    DATABASE_URL: postgresql+psycopg://research:research_local@db:5432/research
+    REDIS_URL: redis://redis:6379/0
+    JWT_SECRET: ${JWT_SECRET:?copy .env.example to .env}
+    SEED_DEMO: ${SEED_DEMO:-true}
+  volumes:
+    - research_files:/artifacts
+services:
+  frontend:
+    build: ./frontend
+    container_name: ${COMPOSE_PROJECT_NAME:-tactile-pareto-gb0080}-frontend
+    ports: ["127.0.0.1:${FRONTEND_PORT:-18304}:80"]
+    depends_on:
+      backend: {condition: service_healthy}
+    healthcheck:
+      test: [CMD, wget, -q, -O, /dev/null, http://127.0.0.1/api/health]
+      interval: 2s
+      timeout: 3s
+      retries: 15
+  backend:
+    <<: *python
+    container_name: ${COMPOSE_PROJECT_NAME:-tactile-pareto-gb0080}-backend
+    ports: ["127.0.0.1:${BACKEND_PORT:-19304}:8000"]
+    depends_on:
+      db: {condition: service_healthy}
+      redis: {condition: service_healthy}
+    healthcheck:
+      test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=2)"]
+      interval: 2s
+      timeout: 3s
+      retries: 25
+  worker:
+    <<: *python
+    container_name: ${COMPOSE_PROJECT_NAME:-tactile-pareto-gb0080}-worker
+    command: [python, -m, src.worker]
+    depends_on:
+      db: {condition: service_healthy}
+      redis: {condition: service_healthy}
+      backend: {condition: service_healthy}
+    healthcheck:
+      test: [CMD, python, -m, src.worker_health]
+      interval: 2s
+      timeout: 3s
+      retries: 15
+  db:
+    container_name: ${COMPOSE_PROJECT_NAME:-tactile-pareto-gb0080}-db
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: research
+      POSTGRES_PASSWORD: research_local
+      POSTGRES_DB: research
+    ports: ["127.0.0.1:${DB_PORT:-17804}:5432"]
+    volumes: ["research_db:/var/lib/postgresql/data"]
+    healthcheck:
+      test: [CMD-SHELL, 'pg_isready -h 127.0.0.1 -U research -d research']
+      interval: 2s
+      timeout: 4s
+      retries: 30
+  redis:
+    image: redis:7-alpine
+    container_name: ${COMPOSE_PROJECT_NAME:-tactile-pareto-gb0080}-redis
+    command: [redis-server, --appendonly, 'yes']
+    volumes: ["research_cache:/data"]
+    healthcheck:
+      test: [CMD, redis-cli, ping]
+      interval: 2s
+      timeout: 3s
+      retries: 15
+volumes:
+  research_db:
+  research_cache:
+  research_files:
